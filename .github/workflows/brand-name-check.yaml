@@ -1,0 +1,27 @@
+name: Branch Name Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  validate-branch-name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch name
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          echo "Validating branch: $BRANCH"
+
+          if [[ "$BRANCH" == "main" || "$BRANCH" == "dev" || "$BRANCH" == "redundancy" ]]; then
+            echo "Direct PRs from protected branch names are not allowed."
+            exit 1
+          fi
+
+          if [[ ! "$BRANCH" =~ ^(feat|fix|infra|ui|art|docs)/[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "Invalid branch name: $BRANCH"
+            echo "Expected: type/slug  (e.g., feat/inventory-base)"
+            exit 1
+          fi
