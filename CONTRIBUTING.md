@@ -34,9 +34,9 @@ Copy code
 
 Examples:
 
-feat/inventory-base
-infra/bot-command-loader
-art/blockout-kit
+- feat/inventory-base
+- infra/bot-command-loader
+- art/blockout-kit
 
 yaml
 Copy code
