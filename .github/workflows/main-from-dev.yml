@@ -1,4 +1,4 @@
-name: dev to main validation
+name: Main Promotion Gate (dev → main only)
 
 on:
   pull_request:
