@@ -3,7 +3,6 @@ name: Branch Name Validation
 on:
   pull_request:
     branches:
-      - main
       - dev
 
 jobs:
