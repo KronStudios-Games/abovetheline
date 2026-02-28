@@ -1,0 +1,22 @@
+name: Main Promotion Gate (dev → main only)
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  enforce-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure PR into main comes from dev
+        run: |
+          SOURCE="${{ github.head_ref }}"
+          echo "PR source branch: $SOURCE"
+
+          if [ "$SOURCE" != "dev" ]; then
+            echo "Blocked: PRs into 'main' must come from 'dev' only."
+            exit 1
+          fi
+
+          echo "OK: main promotion is from dev."
