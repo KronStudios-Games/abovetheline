@@ -1,0 +1,29 @@
+# Unreal Engine
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vs/
+*.VC.db
+*.VC.opendb
+*.sln
+*.opensdf
+*.sdf
+*.log
+*.tmp
+
+# Build
+Build/
+*.pdb
+*.obj
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
