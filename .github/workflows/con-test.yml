@@ -3,23 +3,45 @@ name: Hetzner GitHub Connection Test
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: hetzner-connection-test
+  cancel-in-progress: false
+
 jobs:
   test-connection:
     runs-on: ubuntu-latest
 
+    # Restrict execution
+    if: |
+      github.repository == 'KronStudios-Games/abovetheline' &&
+      github.repository_owner == 'KronStudios-Games' &&
+      github.actor == 'KronTheDev'
+
     steps:
       - name: Install SSH client
-        run: sudo apt-get update && sudo apt-get install -y openssh-client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openssh-client git curl
 
       - name: Set up SSH key
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE }}" > ~/.ssh/id_rsa
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE }}" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+
+      - name: Validate SSH key
+        run: |
+          ssh-keygen -y -f ~/.ssh/id_rsa > /dev/null
 
       - name: Add Hetzner host to known_hosts
         run: |
           ssh-keyscan -H "${{ secrets.HETZNER_KS_ID }}" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Test GitHub connectivity from Hetzner server
         env:
@@ -27,13 +49,21 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SERVER_IP: ${{ secrets.HETZNER_KS_ID }}
         run: |
-          ssh -i ~/.ssh/id_rsa root@"$SERVER_IP" \
+          set -euo pipefail
+
+          ssh \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=10 \
+            -i ~/.ssh/id_rsa \
+            root@"$SERVER_IP" \
             "set -e;
              echo 'Testing DNS resolution...';
              getent hosts github.com;
 
              echo 'Testing HTTPS access to GitHub...';
-             curl -Is https://github.com | head -n 1;
+             curl -fsSI https://github.com | head -n 1;
 
              echo 'Testing repo access...';
              git ls-remote https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git > /dev/null;
