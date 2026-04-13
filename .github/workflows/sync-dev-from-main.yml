@@ -1,0 +1,43 @@
+name: Sync Dev from Main
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+jobs:
+  sync-dev:
+    if: github.event_name == 'push' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Rebase dev onto latest main
+        run: |
+          git fetch --all --prune
+          git checkout dev
+          if git rebase origin/main; then
+            git push origin dev --force-with-lease
+            echo "dev successfully synced with main"
+          else
+            git rebase --abort
+            echo "Rebase failed due to conflicts — dev was not updated."
+            exit 1
+          fi

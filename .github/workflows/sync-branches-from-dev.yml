@@ -1,0 +1,61 @@
+name: Sync Feature Branches from Dev
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    types:
+      - closed
+    branches:
+      - dev
+
+jobs:
+  sync-branches:
+    if: github.event_name == 'push' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync matching branches to latest dev
+        run: |
+          git fetch --all --prune
+
+          PATTERN='^(prog|script|fix|infra|ui|art|docs)/[a-z0-9]+(-[a-z0-9]+)*$'
+          FAILED=()
+
+          for REF in $(git branch -r | grep -v '\->' | sed 's|origin/||' | tr -d ' '); do
+            if [[ "$REF" =~ $PATTERN ]]; then
+              echo "Syncing: $REF"
+              git checkout "$REF" 2>/dev/null || git checkout -b "$REF" "origin/$REF"
+              if git rebase origin/dev; then
+                git push origin "$REF" --force-with-lease
+                echo "  -> OK"
+              else
+                git rebase --abort
+                FAILED+=("$REF")
+                echo "  -> CONFLICT: skipped"
+              fi
+            fi
+          done
+
+          if [ ${#FAILED[@]} -gt 0 ]; then
+            echo ""
+            echo "The following branches could not be synced due to conflicts:"
+            for B in "${FAILED[@]}"; do
+              echo "  - $B"
+            done
+            exit 1
+          fi
