@@ -19,7 +19,7 @@ jobs:
             exit 1
           fi
 
-          if [[ ! "$BRANCH" =~ ^(feat|fix|infra|ui|art|docs)/[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+          if [[ ! "$BRANCH" =~ ^(prog|script|fix|infra|ui|art|docs)/[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
             echo "Invalid branch name: $BRANCH"
             echo "Expected: type/slug  (e.g., feat/inventory-base)"
             exit 1
